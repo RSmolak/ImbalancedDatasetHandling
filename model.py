@@ -6,8 +6,10 @@ import numpy as np
 
 def prepare_model(model_string, X, y, activation=nn.ReLU(), dropout=0.2):
     if model_string[0][0:3] == "MLP":
-        return NeuralNet(input_dim=X.shape[1], hidden_layers=model_string[1], output_dim=len(np.unique(y)), activation=activation, dropout=dropout)
-
+        prepared_model = NeuralNet(input_dim=X.shape[1], hidden_layers=model_string[1], output_dim=len(np.unique(y)), activation=activation, dropout=dropout)
+    
+    prepared_model.name = model_string[0]
+    return prepared_model
 
 class NeuralNet(nn.Module):
     def __init__(self, input_dim: int, hidden_layers: List[int], output_dim: int,
@@ -20,8 +22,12 @@ class NeuralNet(nn.Module):
             layers += [nn.Linear(hidden_layers[i], hidden_layers[i + 1]), activation, nn.Dropout(dropout)]
         
         layers += [nn.Linear(hidden_layers[-1], output_dim)]
-        
         self.layers = nn.Sequential(*layers)
+
+        self.name = "MLP"
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.layers(x)
+
+    def get_name(self):
+        return self.name
