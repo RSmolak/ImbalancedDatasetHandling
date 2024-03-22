@@ -2,34 +2,54 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, precision_score, recall_score
 
-def plot_losses(train_losses, val_losses):
-    """
-    Plots training and validation losses. Each set of losses (train and val) 
-    is a list of lists, where each inner list contains the losses for a fold.
 
-    Parameters:
-    - train_losses: List of lists of training losses.
-    - val_losses: List of lists of validation losses.
-    """
+def plot_experiment_losses(results, architecture, dataset, imbalance_method):
+    train_losses_all_folds = []
+    val_losses_all_folds = []
+
+    # Iterate over all possible fold IDs (assuming 0 to 4 for a 5-fold setup)
+    for fold_id in range(5):
+        key = (architecture, dataset, imbalance_method, fold_id)
+        #print(f"Types - Architecture: {type(architecture)}, Dataset: {type(dataset)}, Imbalance Method: {type(imbalance_method)}, Fold ID: {type(fold_id)}")
+        if key in results:
+            # Extract losses
+            train_losses = [epoch_data['Loss'] for epoch_data in results[key]['Train']]
+            val_losses = [epoch_data['Loss'] for epoch_data in results[key]['Valid']]
+            
+            train_losses_all_folds.append(train_losses)
+            val_losses_all_folds.append(val_losses)
+        else:
+            print(f"Fold {fold_id} data not found for the specified configuration.")
+
+    # Convert to NumPy arrays for easier manipulation
+    train_losses_all_folds = np.array(train_losses_all_folds)
+    val_losses_all_folds = np.array(val_losses_all_folds)
+
+    # Plotting
     plt.figure(figsize=(12, 6))
 
-    # Plot training losses
-    for fold_losses in train_losses:
+    # Plot training losses for all folds
+    for fold_losses in train_losses_all_folds:
         plt.plot(fold_losses, color='blue', alpha=0.1)  # Slightly transparent
-    mean_train_losses = np.mean(train_losses, axis=0)
+
+    # Plot mean training loss
+    mean_train_losses = np.mean(train_losses_all_folds, axis=0)
     plt.plot(mean_train_losses, color='blue', label='Mean Training Loss', linewidth=2)
 
-    # Plot validation losses
-    for fold_losses in val_losses:
+    # Plot validation losses for all folds
+    for fold_losses in val_losses_all_folds:
         plt.plot(fold_losses, color='red', alpha=0.1)  # Slightly transparent
-    mean_val_losses = np.mean(val_losses, axis=0)
+
+    # Plot mean validation loss
+    mean_val_losses = np.mean(val_losses_all_folds, axis=0)
     plt.plot(mean_val_losses, color='red', label='Mean Validation Loss', linewidth=2)
 
-    plt.title('Training and Validation Loss per Epoch')
+    plt.title(f'Training and Validation Loss per Epoch\n{architecture}, {dataset}, {imbalance_method}')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
-    plt.show()
+    #plt.show()
+
 
 def plot_accuracies(train_accuracies, val_accuracies):
     """

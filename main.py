@@ -1,10 +1,11 @@
 ##########################################################
-#TODO:
+# TODO:
 # 1. Add time measures
-# 2. Add confusion matrix
-# 3. Add ROC curve (maybe)
+# 2. Refactor code
+# 3. Add imbalanced dataset handling
 #
 ##########################################################
+from matplotlib import pyplot as plt
 import tqdm
 import pandas as pd
 
@@ -19,7 +20,7 @@ import torch.utils.data as data
 import model 
 from read_data import load_data
 from imbalanced_handling import handle_imbalanced
-from report import plot_losses, plot_accuracies, plot_metric
+from report import plot_experiment_losses
 
 
 models = [
@@ -45,7 +46,7 @@ imbalance_handling_methods = [
     #"KDE-based_batch_balancing"
 ]
 
-results = []
+results = {}
 
 
 epochs = 200
@@ -55,43 +56,50 @@ learning_rate = 0.001
 
 for id_architecture, architecture in enumerate(models): 
     for id_dataset, dataset in enumerate(datasets):
+
+        # Loading dataset
         print(f"Dataset: {dataset}")
         X, y = load_data(f'DATASETS/{dataset}/{dataset}.dat')
         
-        current_model = model.prepare_model(architecture, X, y)
-        print("Using model", current_model.get_name())
         for id_imbalance, imbalance_method in enumerate(imbalance_handling_methods):
 
             train_losses = []     
             val_losses = []
 
+            # Cross-validation
             kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
             for fold_id, (train_index, test_index) in enumerate(kf.split(X,y)):
+
+                # Unique key for each experiment configuration
+                key = (architecture[0], dataset, imbalance_method, fold_id)
+                if key not in results:
+                    results[key] = {'Train': [], 'Valid': []}
+
+                # Splitting data into train and test
                 X_train, X_test = X[train_index], X[test_index]
                 y_train, y_test = y[train_index], y[test_index]
 
-                current_model = model.prepare_model(architecture, X_train, y_train)
+                # Preparing model
+                current_model = model.prepare_model(architecture, X_train, y_train, dropout=0.0)
                 handle_imbalanced(current_model, X_train, y_train, imbalance_method)
 
+                # Defining device
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                # print(device)
+                current_model = current_model.to(device)
 
+                # Preparing dataloaders
                 X_tensor_train = torch.from_numpy(X_train).float().to(device)
                 y_tensor_train = torch.from_numpy(y_train).long().to(device)
                 X_tensor_valid = torch.from_numpy(X_test).float().to(device)
                 y_tensor_valid = torch.from_numpy(y_test).long().to(device)
-
-                current_model = current_model.to(device)
-
                 train_dataloader = data.DataLoader(data.TensorDataset(X_tensor_train, y_tensor_train), batch_size=batch_size, shuffle=True)
                 valid_dataloader = data.DataLoader(data.TensorDataset(X_tensor_valid, y_tensor_valid), batch_size=batch_size, shuffle=True)
 
+                # Defining loss function and optimizer
                 optimizer = optim.Adam(current_model.parameters(), lr=learning_rate)
                 criterion = nn.CrossEntropyLoss()
 
-                fold_train_losses = []
-                fold_val_losses = []
-
+                # Training
                 pbar = tqdm.tqdm(range(epochs), desc="Epoch", unit="epoch")
                 for epoch in pbar:
                     current_model.train()
@@ -99,12 +107,15 @@ for id_architecture, architecture in enumerate(models):
                     correct = 0
                     total = 0
 
-                    true_labels = []
-                    predicted_labels = []
+                    train_true_labels = []
+                    train_predicted_labels = []
+                    val_true_labels = []
+                    val_predicted_labels = []
 
                     for batch_X, batch_y in train_dataloader:
                         batch_X, batch_y = batch_X.to(device), batch_y.to(device)
 
+                        # Forward pass
                         optimizer.zero_grad()
                         y_pred = current_model(batch_X)
                         loss = criterion(y_pred, batch_y)
@@ -116,23 +127,15 @@ for id_architecture, architecture in enumerate(models):
                         total += batch_y.size(0)
                         correct += (predicted == batch_y).sum().item()
 
-                        true_labels.extend(batch_y.cpu().numpy())
-                        predicted_labels.extend(predicted.cpu().numpy())
+                        train_true_labels.extend(batch_y.cpu().numpy())
+                        train_predicted_labels.extend(predicted.cpu().numpy())
 
-                    # Change to pandas multiindex dataframe
-                    results.append({
-                        'Architecture': architecture,
-                        'Dataset': dataset,
-                        'ImbalanceMethod': imbalance_method,
-                        'FoldID': fold_id,
-                        'Train/Valid': 'Train',
+                    # Saving train results
+                    results[key]['Train'].append({
                         'Loss': train_loss / len(train_dataloader),
-                        'TrueLabels': true_labels,
-                        'PredictedLabels': predicted_labels
+                        'TrueLabels': train_true_labels,
+                        'PredictedLabels': train_predicted_labels
                     })
-
-                    train_accuracy = correct / total
-                    fold_train_losses.append(train_loss / len(train_dataloader))
 
                     # Validation
                     val_loss = 0
@@ -150,29 +153,20 @@ for id_architecture, architecture in enumerate(models):
                             total += batch_y.size(0)
                             correct += (predicted == batch_y).sum().item()
 
-                            true_labels.extend(batch_y.cpu().numpy())
-                            predicted_labels.extend(predicted.cpu().numpy())
+                            val_true_labels.extend(batch_y.cpu().numpy())
+                            val_predicted_labels.extend(predicted.cpu().numpy())
 
-                    results.append({
-                        'Architecture': architecture,
-                        'Dataset': dataset,
-                        'ImbalanceMethod': imbalance_method,
-                        'FoldID': fold_id,
-                        'Train/Valid': 'Valid',
-                        'Loss': train_loss / len(train_dataloader),
-                        'TrueLabels': true_labels,
-                        'PredictedLabels': predicted_labels
+                    results[key]['Valid'].append({
+                    'Loss': val_loss / len(valid_dataloader),
+                    'TrueLabels': val_true_labels,
+                    'PredictedLabels': val_predicted_labels
                     })
-                    val_accuracy = correct / total
-                    fold_val_losses.append(val_loss / len(valid_dataloader))
 
                     # Update progress bar or print statement
-                    pbar.set_description(f"Epoch {epoch + 1}/{epochs} - Train Acc: {train_accuracy:.2f}, Train Loss: {train_loss / len(train_dataloader):.4f}, Val Acc: {val_accuracy:.2f}, Val Loss: {val_loss / len(valid_dataloader):.4f}")
+                    pbar.set_description(f"Epoch {epoch + 1}/{epochs} - Train Loss: {train_loss / len(train_dataloader):.4f}, Val Loss: {val_loss / len(valid_dataloader):.4f}")
 
-                train_losses.append(fold_train_losses)
-                val_losses.append(fold_val_losses)
-            
-            plot_losses(train_losses, val_losses)
+            plot_experiment_losses(results, architecture[0], dataset, imbalance_method)
+            plt.show()
 
 
 df = pd.DataFrame(results)
