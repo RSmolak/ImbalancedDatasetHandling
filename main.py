@@ -38,8 +38,8 @@ datasets = [
 
 imbalance_handling_methods = [
     "none",
-    #"SMOTE",
-    #"random_undersampling",
+    "SMOTE",
+    "random_undersampling",
     #"batch_balancing"
     #"KDE-based_oversampling",
     #"KDE-based_loss_weighting",
@@ -51,17 +51,18 @@ results = {}
 
 epochs = 200
 batch_size = 32
-learning_rate = 0.001
+learning_rate = 0.0002
 
 
 for id_architecture, architecture in enumerate(models): 
     for id_dataset, dataset in enumerate(datasets):
 
         # Loading dataset
-        print(f"Dataset: {dataset}")
+        print(f"Dataset: {dataset}")    
         X, y = load_data(f'DATASETS/{dataset}/{dataset}.dat')
         
         for id_imbalance, imbalance_method in enumerate(imbalance_handling_methods):
+            print(f"Imbalance handling method: {imbalance_method}")
 
             train_losses = []     
             val_losses = []
@@ -166,7 +167,7 @@ for id_architecture, architecture in enumerate(models):
                     pbar.set_description(f"Epoch {epoch + 1}/{epochs} - Train Loss: {train_loss / len(train_dataloader):.4f}, Val Loss: {val_loss / len(valid_dataloader):.4f}")
 
             plot_experiment_losses(results, architecture[0], dataset, imbalance_method)
-            plt.show()
+        plt.show()
 
 
 df = pd.DataFrame(results)
