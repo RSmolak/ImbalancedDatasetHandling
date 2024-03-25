@@ -18,7 +18,7 @@ import torch.optim as optim
 import torch.utils.data as data
 
 import model 
-from read_data import load_data
+from read_data import load_data, prepare_dataloaders
 from imbalanced_handling import handle_imbalanced
 from report import plot_experiment_losses
 
@@ -40,7 +40,7 @@ imbalance_handling_methods = [
     "none",
     "SMOTE",
     "random_undersampling",
-    #"batch_balancing"
+    "batch_balancing"
     #"KDE-based_oversampling",
     #"KDE-based_loss_weighting",
     #"KDE-based_batch_balancing"
@@ -80,21 +80,21 @@ for id_architecture, architecture in enumerate(models):
                 X_train, X_test = X[train_index], X[test_index]
                 y_train, y_test = y[train_index], y[test_index]
 
-                # Preparing model
-                current_model = model.prepare_model(architecture, X_train, y_train, dropout=0.0)
-                handle_imbalanced(current_model, X_train, y_train, imbalance_method)
-
                 # Defining device
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                # Preparing model
+                current_model = model.prepare_model(architecture, X_train, y_train, dropout=0.0)
                 current_model = current_model.to(device)
 
                 # Preparing dataloaders
-                X_tensor_train = torch.from_numpy(X_train).float().to(device)
-                y_tensor_train = torch.from_numpy(y_train).long().to(device)
-                X_tensor_valid = torch.from_numpy(X_test).float().to(device)
-                y_tensor_valid = torch.from_numpy(y_test).long().to(device)
-                train_dataloader = data.DataLoader(data.TensorDataset(X_tensor_train, y_tensor_train), batch_size=batch_size, shuffle=True)
-                valid_dataloader = data.DataLoader(data.TensorDataset(X_tensor_valid, y_tensor_valid), batch_size=batch_size, shuffle=True)
+                train_dataloader, valid_dataloader = prepare_dataloaders(X_train, y_train, X_test, y_test, batch_size, device)
+
+                # Handling imbalanced dataset
+                X_train, y_train, train_dataloader = handle_imbalanced(current_model, 
+                                                                       X_train, 
+                                                                       y_train, 
+                                                                       imbalance_method, 
+                                                                       train_dataloader)
 
                 # Defining loss function and optimizer
                 optimizer = optim.Adam(current_model.parameters(), lr=learning_rate)
