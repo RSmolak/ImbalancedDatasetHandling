@@ -2,9 +2,9 @@
 # TODO:
 # 1. Add time measures
 # 2. Refactor code
-# 3. Add imbalanced dataset handling
-#
-##########################################################
+# 3. Add imbalanced dataset handling (3/6)
+# 4. Add spliting to test dataset (not sure if needed)
+##########################################################e
 from matplotlib import pyplot as plt
 import tqdm
 import pandas as pd
@@ -15,12 +15,12 @@ from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, p
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils.data as data
 
 import model 
 from read_data import load_data, prepare_dataloaders
 from imbalanced_handling import handle_imbalanced
 from report import plot_experiment_losses
+
 
 
 models = [
@@ -38,12 +38,12 @@ datasets = [
 
 imbalance_handling_methods = [
     "none",
-    "SMOTE",
-    "random_undersampling",
-    "batch_balancing"
+    #"SMOTE",
+    #"random_undersampling",
+    #"batch_balancing"
     #"KDE-based_oversampling",
     #"KDE-based_loss_weighting",
-    #"KDE-based_batch_balancing"
+    "KDE-based_batch_balancing"
 ]
 
 results = {}
