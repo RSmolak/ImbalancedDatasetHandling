@@ -2,7 +2,7 @@
 # TODO:
 # 1. Add time measures
 # 2. Refactor code
-# 3. Add imbalanced dataset handling (3/6)
+# 3. Add imbalanced dataset handling (4/6)
 # 4. Add spliting to test dataset (not sure if needed)
 ##########################################################e
 from matplotlib import pyplot as plt
@@ -29,18 +29,18 @@ models = [
 ]
 
 datasets = [
-    'ecoli1',
+    #'ecoli1',
     #'glass4',
     #'vowel0',
     #'yeast3',
-    #'yeast5'
+    'yeast5'
 ]
 
 imbalance_handling_methods = [
     "none",
     #"SMOTE",
     #"random_undersampling",
-    #"batch_balancing"
+    "batch_balancing",
     #"KDE-based_oversampling",
     #"KDE-based_loss_weighting",
     "KDE-based_batch_balancing"
@@ -51,7 +51,7 @@ results = {}
 
 epochs = 200
 batch_size = 32
-learning_rate = 0.0002
+learning_rate = 0.001
 
 
 for id_architecture, architecture in enumerate(models): 
@@ -60,6 +60,7 @@ for id_architecture, architecture in enumerate(models):
         # Loading dataset
         print(f"Dataset: {dataset}")    
         X, y = load_data(f'DATASETS/{dataset}/{dataset}.dat')
+        print(X,y)
         
         for id_imbalance, imbalance_method in enumerate(imbalance_handling_methods):
             print(f"Imbalance handling method: {imbalance_method}")
@@ -69,6 +70,10 @@ for id_architecture, architecture in enumerate(models):
 
             # Cross-validation
             kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+            all_ones = []
+            all_zeros = []
+
             for fold_id, (train_index, test_index) in enumerate(kf.split(X,y)):
 
                 # Unique key for each experiment configuration
@@ -100,6 +105,10 @@ for id_architecture, architecture in enumerate(models):
                 optimizer = optim.Adam(current_model.parameters(), lr=learning_rate)
                 criterion = nn.CrossEntropyLoss()
 
+                # Counting number of ones and zeros in train labels per fold
+                count_ones = 0
+                count_zeros = 0
+
                 # Training
                 pbar = tqdm.tqdm(range(epochs), desc="Epoch", unit="epoch")
                 for epoch in pbar:
@@ -115,6 +124,13 @@ for id_architecture, architecture in enumerate(models):
 
                     for batch_X, batch_y in train_dataloader:
                         batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+
+                        # Counting number of ones and zeros in batch
+                        ones = (batch_y == 1).sum().item()
+                        zeros = (batch_y == 0).sum().item()
+                        count_ones += ones
+                        count_zeros += zeros
+
 
                         # Forward pass
                         optimizer.zero_grad()
@@ -166,7 +182,14 @@ for id_architecture, architecture in enumerate(models):
                     # Update progress bar or print statement
                     pbar.set_description(f"Epoch {epoch + 1}/{epochs} - Train Loss: {train_loss / len(train_dataloader):.4f}, Val Loss: {val_loss / len(valid_dataloader):.4f}")
 
+                all_ones.append(count_ones)
+                all_zeros.append(count_zeros)
+
             plot_experiment_losses(results, architecture[0], dataset, imbalance_method)
+            
+            print("All ones:", all_ones)
+            print("All zeros:", all_zeros)
+
         plt.show()
 
 

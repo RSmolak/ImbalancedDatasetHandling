@@ -18,6 +18,20 @@ def load_data(file_name):
 
     return features, numerical_labels
 
+class WeightedDataset(data.Dataset):
+    def __init__(self, data, weights):
+        self.data = data  # Your data
+        self.weights = weights 
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        data_sample = self.data[idx]
+        weight = self.weights[idx]
+        return data_sample, weight
+
+
 def prepare_dataloaders(X_train, y_train, X_test, y_test, batch_size, device):
     # Preparing dataloaders
     X_tensor_train = torch.from_numpy(X_train).float().to(device)
