@@ -8,6 +8,7 @@
 from matplotlib import pyplot as plt
 import tqdm
 import pandas as pd
+import numpy as np
 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, precision_score, recall_score
@@ -17,7 +18,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import model 
-from read_data import load_data, prepare_dataloaders
+from read_data import load_data, prepare_dataloaders, WeightedDataset
 from imbalanced_handling import handle_imbalanced
 from report import plot_experiment_losses
 
@@ -37,9 +38,9 @@ datasets = [
 ]
 
 imbalance_handling_methods = [
-    "none",
+    #"none",
     #"SMOTE",
-    #"random_undersampling",
+    "random_undersampling",
     "batch_balancing",
     #"KDE-based_oversampling",
     #"KDE-based_loss_weighting",
@@ -48,11 +49,9 @@ imbalance_handling_methods = [
 
 results = {}
 
-
-epochs = 200
+epochs = 50
 batch_size = 32
 learning_rate = 0.001
-
 
 for id_architecture, architecture in enumerate(models): 
     for id_dataset, dataset in enumerate(datasets):
@@ -60,7 +59,6 @@ for id_architecture, architecture in enumerate(models):
         # Loading dataset
         print(f"Dataset: {dataset}")    
         X, y = load_data(f'DATASETS/{dataset}/{dataset}.dat')
-        print(X,y)
         
         for id_imbalance, imbalance_method in enumerate(imbalance_handling_methods):
             print(f"Imbalance handling method: {imbalance_method}")
@@ -91,15 +89,17 @@ for id_architecture, architecture in enumerate(models):
                 current_model = model.prepare_model(architecture, X_train, y_train, dropout=0.0)
                 current_model = current_model.to(device)
 
+                # Creating dataset objects
+                train_dataset = WeightedDataset(torch.tensor(X_train).float(), torch.tensor(y_train).long(), weights=np.ones(len(y_train)).tolist())
+                valid_dataset = WeightedDataset(torch.tensor(X_test).float(), torch.tensor(y_test).long(), weights=np.ones(len(y_test)).tolist())
+
                 # Preparing dataloaders
-                train_dataloader, valid_dataloader = prepare_dataloaders(X_train, y_train, X_test, y_test, batch_size, device)
+                train_dataloader, valid_dataloader = prepare_dataloaders(train_dataset, valid_dataset, batch_size)
 
                 # Handling imbalanced dataset
-                X_train, y_train, train_dataloader = handle_imbalanced(current_model, 
-                                                                       X_train, 
-                                                                       y_train, 
-                                                                       imbalance_method, 
-                                                                       train_dataloader)
+                train_dataset, train_dataloader = handle_imbalanced(train_dataset,
+                                                                    imbalance_method, 
+                                                                    train_dataloader)
 
                 # Defining loss function and optimizer
                 optimizer = optim.Adam(current_model.parameters(), lr=learning_rate)
@@ -122,8 +122,8 @@ for id_architecture, architecture in enumerate(models):
                     val_true_labels = []
                     val_predicted_labels = []
 
-                    for batch_X, batch_y in train_dataloader:
-                        batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+                    for batch_X, batch_y, weights in train_dataloader:
+                        batch_X, batch_y, weights = batch_X.to(device), batch_y.to(device), weights.to(device)
 
                         # Counting number of ones and zeros in batch
                         ones = (batch_y == 1).sum().item()
@@ -161,7 +161,7 @@ for id_architecture, architecture in enumerate(models):
                     current_model.eval()
 
                     with torch.no_grad():
-                        for batch_X, batch_y in valid_dataloader:
+                        for batch_X, batch_y, _ in valid_dataloader:
                             batch_X, batch_y = batch_X.to(device), batch_y.to(device)
                             y_pred = current_model(batch_X)
                             loss = criterion(y_pred, batch_y)

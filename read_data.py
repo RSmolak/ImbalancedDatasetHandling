@@ -19,28 +19,22 @@ def load_data(file_name):
     return features, numerical_labels
 
 class WeightedDataset(data.Dataset):
-    def __init__(self, data, weights):
+    def __init__(self, data, labels, weights):
         self.data = data  # Your data
-        self.weights = weights 
+        self.labels = labels  # Your labels
+        self.weights = weights  # Corresponding weights for each data sample
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         data_sample = self.data[idx]
+        label = self.labels[idx]
         weight = self.weights[idx]
-        return data_sample, weight
+        return data_sample, label, weight
 
 
-def prepare_dataloaders(X_train, y_train, X_test, y_test, batch_size, device):
-    # Preparing dataloaders
-    X_tensor_train = torch.from_numpy(X_train).float().to(device)
-    y_tensor_train = torch.from_numpy(y_train).long().to(device)
-    X_tensor_valid = torch.from_numpy(X_test).float().to(device)
-    y_tensor_valid = torch.from_numpy(y_test).long().to(device)
-
-    data.TensorDataset(X_tensor_train, y_tensor_train)
-
-    train_dataloader = data.DataLoader(data.TensorDataset(X_tensor_train, y_tensor_train), batch_size=batch_size, shuffle=True)
-    valid_dataloader = data.DataLoader(data.TensorDataset(X_tensor_valid, y_tensor_valid), batch_size=batch_size, shuffle=True)
+def prepare_dataloaders(train_dataset, valid_dataset, batch_size):
+    train_dataloader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    valid_dataloader = data.DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
     return train_dataloader, valid_dataloader
