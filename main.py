@@ -42,7 +42,7 @@ imbalance_handling_methods = [
     #"SMOTE",
     #"random_undersampling",
     #"batch_balancing",
-    #"KDE-based_oversampling",
+    "KDE-based_oversampling",
     "KDE-based_loss_weighting",
     #"KDE-based_batch_balancing"
 ]

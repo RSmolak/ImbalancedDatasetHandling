@@ -28,3 +28,11 @@ def get_kde_weights(data: np.ndarray, transform = None):
         mean_weight = np.mean(weights)
         weights = weights / mean_weight
     return weights
+
+def generate_kde_samples(data: np.ndarray, num_samples: int):
+    data = data.T  # Transpose data to match the expected shape by gaussian_kde (features in rows)
+    kde = gaussian_kde(data)  # Fit the KDE model
+
+    # Resample new points from the KDE model
+    new_samples = kde.resample(size=num_samples).T  # Transpose back to original shape (samples, features)
+    return new_samples
