@@ -1,9 +1,9 @@
 ##########################################################
 # TODO:
-# 1. Add time measures
-# 2. Refactor code
-# 3. Add imbalanced dataset handling (4/6)
-# 4. Add spliting to test dataset (not sure if needed)
+# - 
+# - Add time measures
+# - Refactor code?
+# - Add imbalanced dataset handling (4/6)
 ##########################################################e
 from matplotlib import pyplot as plt
 import tqdm
@@ -31,27 +31,27 @@ models = [
 
 datasets = [
     #'ecoli1',
-    #'glass4',
+    'glass4',
     #'vowel0',
     #'yeast3',
-    'yeast5'
+    #'yeast5'
 ]
 
 imbalance_handling_methods = [
     #"none",
     #"SMOTE",
-    "random_undersampling",
-    "batch_balancing",
+    #"random_undersampling",
+    #"batch_balancing",
     #"KDE-based_oversampling",
-    #"KDE-based_loss_weighting",
-    "KDE-based_batch_balancing"
+    "KDE-based_loss_weighting",
+    #"KDE-based_batch_balancing"
 ]
 
 results = {}
 
-epochs = 50
+epochs = 200
 batch_size = 32
-learning_rate = 0.001
+learning_rate = 0.0002
 
 for id_architecture, architecture in enumerate(models): 
     for id_dataset, dataset in enumerate(datasets):
@@ -103,7 +103,8 @@ for id_architecture, architecture in enumerate(models):
 
                 # Defining loss function and optimizer
                 optimizer = optim.Adam(current_model.parameters(), lr=learning_rate)
-                criterion = nn.CrossEntropyLoss()
+                train_criterion = nn.CrossEntropyLoss(reduction='none')
+                val_criterion = nn.CrossEntropyLoss()
 
                 # Counting number of ones and zeros in train labels per fold
                 count_ones = 0
@@ -135,7 +136,15 @@ for id_architecture, architecture in enumerate(models):
                         # Forward pass
                         optimizer.zero_grad()
                         y_pred = current_model(batch_X)
-                        loss = criterion(y_pred, batch_y)
+                        loss = train_criterion(y_pred, batch_y)
+
+                        # Calculating weighted loss
+                        if weights is not None:
+                            loss = torch.mean(loss * weights)
+                        else:
+                            loss = torch.mean(loss)
+
+                        # Backward pass
                         loss.backward()
                         optimizer.step()
 
@@ -164,7 +173,7 @@ for id_architecture, architecture in enumerate(models):
                         for batch_X, batch_y, _ in valid_dataloader:
                             batch_X, batch_y = batch_X.to(device), batch_y.to(device)
                             y_pred = current_model(batch_X)
-                            loss = criterion(y_pred, batch_y)
+                            loss = val_criterion(y_pred, batch_y)
                             val_loss += loss.item()
                             _, predicted = torch.max(y_pred.data, 1)
                             total += batch_y.size(0)

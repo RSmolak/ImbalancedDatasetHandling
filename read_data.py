@@ -36,5 +36,5 @@ class WeightedDataset(data.Dataset):
 
 def prepare_dataloaders(train_dataset, valid_dataset, batch_size):
     train_dataloader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    valid_dataloader = data.DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
+    valid_dataloader = data.DataLoader(valid_dataset, batch_size=batch_size)
     return train_dataloader, valid_dataloader
