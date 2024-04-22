@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import model 
-from read_data import load_data, prepare_dataloaders, WeightedDataset
+from read_data import load_data, prepare_dataloaders, WeightedDataset, generate_synthetic_dataset
 from imbalanced_handling import handle_imbalanced
 from report import plot_experiment_losses
 
@@ -29,21 +29,29 @@ models = [
     ["MLP_20_20_20",[20, 20, 20]],  
 ]
 
+synthetic_datasets = [
+    'synthetic_2000_7_0.9'
+]
+
 datasets = [
     #'ecoli1',
-    'glass4',
+    #'ecoli2',
+    #'glass4',
     #'vowel0',
+    #'iris0'
     #'yeast3',
     #'yeast5'
 ]
 
+datasets.extend(synthetic_datasets)
+
 imbalance_handling_methods = [
-    #"none",
+    "none",
     #"SMOTE",
     #"random_undersampling",
     #"batch_balancing",
     "KDE-based_oversampling",
-    "KDE-based_loss_weighting",
+    #"KDE-based_loss_weighting",
     #"KDE-based_batch_balancing"
 ]
 
@@ -57,8 +65,11 @@ for id_architecture, architecture in enumerate(models):
     for id_dataset, dataset in enumerate(datasets):
 
         # Loading dataset
-        print(f"Dataset: {dataset}")    
-        X, y = load_data(f'DATASETS/{dataset}/{dataset}.dat')
+        print(f"Dataset: {dataset}") 
+        if dataset.startswith("synthetic"):
+            X, y = generate_synthetic_dataset(dataset)
+        else:   
+            X, y = load_data(f'DATASETS/{dataset}/{dataset}.dat')
         
         for id_imbalance, imbalance_method in enumerate(imbalance_handling_methods):
             print(f"Imbalance handling method: {imbalance_method}")

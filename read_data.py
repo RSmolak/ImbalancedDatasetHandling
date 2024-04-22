@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from sklearn.datasets import make_classification
 
 import torch.utils.data as data
 import torch
@@ -17,6 +18,18 @@ def load_data(file_name):
     numerical_labels = le.fit_transform(labels)
 
     return features, numerical_labels
+
+def generate_synthetic_dataset(dataset_name):
+    _, n_samples, n_features, imbalance_ratio = dataset_name.split('_')
+    n_samples, n_features, imbalance_ratio = int(n_samples), int(n_features), float(imbalance_ratio)
+    print(n_samples, n_features, imbalance_ratio)
+
+    imbalance_ratio = [imbalance_ratio, 1 - imbalance_ratio]
+    X, y = make_classification(n_samples=n_samples, n_features=n_features, n_classes=2,
+                               weights=imbalance_ratio, n_informative=n_features, n_redundant=0, random_state=42)
+    
+    return X, y
+
 
 class WeightedDataset(data.Dataset):
     def __init__(self, data, labels, weights):

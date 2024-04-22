@@ -29,9 +29,17 @@ def get_kde_weights(data: np.ndarray, transform = None):
         weights = weights / mean_weight
     return weights
 
+
 def generate_kde_samples(data: np.ndarray, num_samples: int):
     data = data.T  # Transpose data to match the expected shape by gaussian_kde (features in rows)
-    kde = gaussian_kde(data)  # Fit the KDE model
+
+    try:
+        kde = gaussian_kde(data)  # Attempt to fit the KDE model
+    except np.linalg.LinAlgError:
+        # Apply a stronger regularization and retry
+        kde = gaussian_kde(data, bw_method='scott')
+        kde.covariance = kde.covariance + 0.0001 * np.eye(data.shape[1])
+        kde._compute_covariance()
 
     # Resample new points from the KDE model
     new_samples = kde.resample(size=num_samples).T  # Transpose back to original shape (samples, features)
