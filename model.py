@@ -16,7 +16,7 @@ class NeuralNet(nn.Module):
                  activation: nn.Module = nn.ReLU(), dropout: float = 0.2) -> None:
         super().__init__()
 
-        layers = [nn.Linear(input_dim, hidden_layers[0]), activation]
+        layers = [nn.Linear(input_dim, hidden_layers[0]), activation, nn.Dropout(dropout)]
         
         for i in range(len(hidden_layers) - 1):
             layers += [nn.Linear(hidden_layers[i], hidden_layers[i + 1]), activation, nn.Dropout(dropout)]

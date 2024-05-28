@@ -27,6 +27,10 @@ def get_kde_weights(data: np.ndarray, transform = None):
     elif transform == 'scale_weights_to_mean_one':
         mean_weight = np.mean(weights)
         weights = weights / mean_weight
+    elif transform == 'scale_weights_to_mean_one_squared':
+        mean_weight = np.mean(weights)
+        weights = weights / mean_weight
+        weights = [weight**2 for weight in weights]
     return weights
 
 

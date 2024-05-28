@@ -68,14 +68,16 @@ def perform_random_undersampling(X, y):
     return X, y
 
 def perform_batch_balancing(train_dataset, train_dataloader):
-    # Calculate weights
+    # Obliczanie wag dla klas
     y = torch.tensor(train_dataset.labels)
     class_counts = torch.tensor([(y == class_id).sum() for class_id in torch.unique(y, sorted=True)])
     class_weights = 1. / class_counts.float()
     weights = class_weights[y]
 
+    # Tworzenie samplera na obliczonych wagach
     sampler = WeightedRandomSampler(weights, len(weights))
     new_dataloader = DataLoader(train_dataloader.dataset, batch_size=train_dataloader.batch_size, sampler=sampler)
+    
     return new_dataloader
 
 def perform_KDE_based_oversampling(X, y):
@@ -115,10 +117,12 @@ def perform_KDE_based_oversampling(X, y):
 
 
 def perform_KDE_based_loss_weighting(X, y):
-    weights = get_kde_weights(X, transform='scale_weights_to_mean_one')
+    weights = get_kde_weights(X, transform='scale_weights_to_mean_one_squared')
     return weights
 def perform_KDE_based_batch_balancing(train_dataset, train_dataloader):
-    weights = get_kde_weights(train_dataset.data, transform='scale_weights_to_mean_one')
+    weights = get_kde_weights(train_dataset.data, transform='scale_weights_to_mean_one_squared')
     sampler = WeightedRandomSampler(weights, len(weights))
     new_dataloader = DataLoader(train_dataloader.dataset, batch_size=train_dataloader.batch_size, sampler=sampler)
     return new_dataloader
+
+

@@ -1,9 +1,7 @@
 ##########################################################
 # TODO:
 # - 
-# - Add time measures
 # - Refactor code?
-# - Add imbalanced dataset handling (4/6)
 ##########################################################e
 from matplotlib import pyplot as plt
 import tqdm
@@ -25,41 +23,50 @@ from report import plot_experiment_losses
 
 
 models = [
-    #["MLP_10_10_10",[10, 10, 10]],
+    ["MLP_10_10_10",[10, 10, 10]],
     ["MLP_20_20_20",[20, 20, 20]],  
 ]
 
+# Naming convention synthetic_<number of samples>_<number of features>_<imbalance ratio>
 synthetic_datasets = [
-    'synthetic_2000_7_0.9'
+    'synthetic_500_8_0.6',
+    'synthetic_500_8_0.7',
+    'synthetic_500_8_0.8',
+    'synthetic_500_8_0.9',
+    'synthetic_500_8_0.92',
+    'synthetic_500_8_0.94',
+    'synthetic_500_8_0.95',
+    'synthetic_500_8_0.96',
+    'synthetic_500_8_0.97',
+    'synthetic_500_8_0.98'
 ]
 
 datasets = [
-    #'ecoli1',
-    #'ecoli2',
-    #'glass4',
-    #'vowel0',
-    #'iris0'
-    #'yeast3',
-    #'yeast5'
+    'ecoli1',
+    'glass4',
+    'vowel0',
+    'iris0',
+    'glass6',
+    'winequality-red-4'
 ]
 
 datasets.extend(synthetic_datasets)
 
 imbalance_handling_methods = [
     "none",
-    #"SMOTE",
-    #"random_undersampling",
-    #"batch_balancing",
+    "SMOTE",
+    "random_undersampling",
+    "batch_balancing",
     "KDE-based_oversampling",
-    #"KDE-based_loss_weighting",
-    #"KDE-based_batch_balancing"
+    "KDE-based_loss_weighting",
+    "KDE-based_batch_balancing"
 ]
 
 results = {}
 
-epochs = 200
+epochs = 300
 batch_size = 32
-learning_rate = 0.0002
+learning_rate = 0.0003
 
 for id_architecture, architecture in enumerate(models): 
     for id_dataset, dataset in enumerate(datasets):
@@ -97,7 +104,8 @@ for id_architecture, architecture in enumerate(models):
                 # Defining device
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
                 # Preparing model
-                current_model = model.prepare_model(architecture, X_train, y_train, dropout=0.0)
+                current_model = model.prepare_model(architecture, X_train, y_train, dropout=0.2)
+                # print(current_model)
                 current_model = current_model.to(device)
 
                 # Creating dataset objects
@@ -194,9 +202,9 @@ for id_architecture, architecture in enumerate(models):
                             val_predicted_labels.extend(predicted.cpu().numpy())
 
                     results[key]['Valid'].append({
-                    'Loss': val_loss / len(valid_dataloader),
-                    'TrueLabels': val_true_labels,
-                    'PredictedLabels': val_predicted_labels
+                        'Loss': val_loss / len(valid_dataloader),
+                        'TrueLabels': val_true_labels,
+                        'PredictedLabels': val_predicted_labels
                     })
 
                     # Update progress bar or print statement
@@ -205,7 +213,7 @@ for id_architecture, architecture in enumerate(models):
                 all_ones.append(count_ones)
                 all_zeros.append(count_zeros)
 
-            plot_experiment_losses(results, architecture[0], dataset, imbalance_method)
+            # plot_experiment_losses(results, architecture[0], dataset, imbalance_method)
             
             print("All ones:", all_ones)
             print("All zeros:", all_zeros)
@@ -214,4 +222,4 @@ for id_architecture, architecture in enumerate(models):
 
 
 df = pd.DataFrame(results)
-df.to_csv("experiment_results.csv", index=False)
+df.to_csv("experiment_results_final.csv", index=False)
