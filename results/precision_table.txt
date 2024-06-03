@@ -1,0 +1,12 @@
+\begin{tabular}{llllllll}
+\toprule
+Zbiory danych & none & SMOTE & random_undersampling & batch_balancing & KDE-based_oversampling & KDE-based_loss_weighting & KDE-based_batch_balancing \\
+\midrule
+ecoli1 & 0.721 & 0.653 & 0.587 & 0.642 & 0.623 & 0.717 & \textbf{0.746} \\
+glass4 & 0.0 & 0.239 & 0.128 & \textbf{0.293} & 0.251 & 0.0 & 0.0 \\
+vowel0 & 0.97 & 0.929 & 0.517 & 0.888 & 0.807 & \textbf{0.989} & 0.977 \\
+iris0 & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} \\
+glass6 & 0.0 & \textbf{0.801} & 0.543 & 0.461 & 0.698 & 0.0 & 0.0 \\
+winequality-red-4 & 0.0 & 0.071 & 0.044 & 0.069 & \textbf{0.093} & 0.0 & 0.0 \\
+\bottomrule
+\end{tabular}

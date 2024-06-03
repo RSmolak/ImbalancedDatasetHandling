@@ -24,7 +24,7 @@ from report import plot_experiment_losses
 
 models = [
     ["MLP_10_10_10",[10, 10, 10]],
-    ["MLP_20_20_20",[20, 20, 20]],  
+    # ["MLP_20_20_20",[20, 20, 20]],  
 ]
 
 # Naming convention synthetic_<number of samples>_<number of features>_<imbalance ratio>
@@ -222,4 +222,4 @@ for id_architecture, architecture in enumerate(models):
 
 
 df = pd.DataFrame(results)
-df.to_csv("experiment_results_final.csv", index=False)
+df.to_csv("test.csv", index=False)

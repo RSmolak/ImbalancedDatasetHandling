@@ -117,10 +117,10 @@ def perform_KDE_based_oversampling(X, y):
 
 
 def perform_KDE_based_loss_weighting(X, y):
-    weights = get_kde_weights(X, transform='scale_weights_to_mean_one_squared')
+    weights = get_kde_weights(X, transform='normalize-expand')
     return weights
 def perform_KDE_based_batch_balancing(train_dataset, train_dataloader):
-    weights = get_kde_weights(train_dataset.data, transform='scale_weights_to_mean_one_squared')
+    weights = get_kde_weights(train_dataset.data, transform='normalize-expand')
     sampler = WeightedRandomSampler(weights, len(weights))
     new_dataloader = DataLoader(train_dataloader.dataset, batch_size=train_dataloader.batch_size, sampler=sampler)
     return new_dataloader
