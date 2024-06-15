@@ -431,7 +431,7 @@ metrics = [
 
 
 
-fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+fig, axs = plt.subplots(2, 2, figsize=(12, 12))
 fig.suptitle("Metrics for different imbalanced ratios")
 
 # First subplot
@@ -502,16 +502,26 @@ for method in methods:
 handles, labels = axs[1,1].get_legend_handles_labels()
 print(handles, labels)
 plt.figlegend(handles, labels, loc='lower center', ncol=4)
-
-plt.tight_layout(rect=[0, 0.05, 1, 1])
+axs[0,0].set_ylabel('Balanced Accuracy')
+axs[0,1].set_ylabel('Precision')
+axs[1,0].set_ylabel('Recall')
+axs[1,1].set_ylabel('F1')
+axs[0,0].set_xlabel('Imbalanced Ratio')
+axs[0,1].set_xlabel('Imbalanced Ratio')
+axs[1,0].set_xlabel('Imbalanced Ratio')
+axs[1,1].set_xlabel('Imbalanced Ratio')
+plt.tight_layout(rect=[0.05, 0.05, 0.95, 0.95])
 plt.savefig('results/metrics_for_imbalanced_ratios.png')
-# plt.show()
+
+
+
+plt.show()
 
 
 
 # for dataset in datasets:
 #     print(dataset)
-#     fig, axs = plt.subplots(1, 3, figsize=(12,6))
+#     fig, axs = plt.subplots(1, 3, figsize=(12,7))
 #     fig.suptitle(f"Balanced Accuracy per epoch for {dataset}")
 
 #     axs[0].set_title("KDE-based_oversampling")
@@ -523,6 +533,7 @@ plt.savefig('results/metrics_for_imbalanced_ratios.png')
 #     axs[0].legend(['none', 'SMOTE', 'random_undersampling', 'batch_balancing', 'KDE-based_oversampling'])
 #     axs[0].set_ylabel('Balanced Accuracy')
 #     axs[0].set_xlabel('Epoch')
+#     axs[0].set_ylim(bottom=0.35)
 
 #     axs[1].set_title("KDE-based_loss_weighting")
 #     plot_metric_per_epoch_allfolds(axs[1], df2, 'MLP_10_10_10', dataset, 'none', 'balanced_accuracy')
@@ -533,6 +544,7 @@ plt.savefig('results/metrics_for_imbalanced_ratios.png')
 #     axs[1].legend(['none', 'SMOTE', 'random_undersampling', 'batch_balancing', 'KDE-based_loss_weighting'])
 #     axs[1].set_ylabel('Balanced Accuracy')
 #     axs[1].set_xlabel('Epoch')
+#     axs[1].set_ylim(bottom=0.35)
 
 #     axs[2].set_title("KDE-based_batch_balancing")
 #     plot_metric_per_epoch_allfolds(axs[2], df2, 'MLP_10_10_10', dataset, 'none', 'balanced_accuracy')
@@ -543,6 +555,7 @@ plt.savefig('results/metrics_for_imbalanced_ratios.png')
 #     axs[2].legend(['none', 'SMOTE', 'random_undersampling', 'batch_balancing', 'KDE-based_batch_balancing'])
 #     axs[2].set_ylabel('Balanced Accuracy')
 #     axs[2].set_xlabel('Epoch')
+#     axs[2].set_ylim(bottom=0.35)
 #     plt.tight_layout()
 #     plt.savefig(f'results/Balanced_Accuracy_per_epoch_for_{dataset}.png')
 
